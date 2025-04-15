@@ -5,7 +5,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -25,9 +27,14 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import org.studyeasy.SpringStarter.models.Account;
 import org.studyeasy.SpringStarter.services.AccountService;
+import org.studyeasy.SpringStarter.services.EmailService;
 import org.studyeasy.SpringStarter.utils.AppUtil;
+import org.studyeasy.SpringStarter.utils.email.EmailDetails;
 
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.RequestBody;
+
+
 
 @Controller
 public class AccountController {
@@ -35,8 +42,16 @@ public class AccountController {
 @Value("${spring.mvc.static-path-pattern}")
 private String photo_prefix;
 
+@Value("${password.token.reset.timeout.minutes}")
+private String password_token_timeout;
+@Value("${site.domain}")
+private String site_domain;
+
   @Autowired
   private AccountService accountService;
+
+  @Autowired
+  private EmailService emailService;
 
   @GetMapping("/register")
   public String register(Model model) {
@@ -186,5 +201,77 @@ private String photo_prefix;
   public String forgotPassword(Model model){
     return "account_views/forgot_password";
   }
+
+  @PostMapping("reset-password")
+  public String resetPassword(@RequestParam("email") String _email, RedirectAttributes attributes, Model model) {
+      Optional<Account> optionalAccount = accountService.findOneByEmail(_email);
+      
+      if(optionalAccount.isPresent()){
+        Account account = accountService.findById(optionalAccount.get().getId()).get(); 
+        String reset_token = UUID.randomUUID().toString();
+        account.setPasswordResetToken(reset_token);
+        account.setPassword_reset_token_expiry(LocalDateTime.now().plusMinutes(Integer.parseInt(password_token_timeout)));
+
+        accountService.save(account);
+
+        String reset_message = "This is the password reset link:"+site_domain+ "change-password?token="+reset_token;
+
+        EmailDetails emailDetails =  new EmailDetails(account.getEmail(),reset_message,"reset Password ");
+
+        if( !emailService.sendSimplemail(emailDetails)){
+          attributes.addFlashAttribute("error","Error sending email");
+          return "redirect:/forgot-password";
+        }
+       
+        attributes.addFlashAttribute("message","Password reset link sent to your email");
+        return "redirect:/login";
+
+      }else{
+        attributes.addFlashAttribute("error","No account found with this email");
+        return "redirect:/forgot-password";
+      }
+     
+  }
+
+  @GetMapping("/change-password")
+  public String changePassword(Model model,@RequestParam("token") String token,RedirectAttributes attributes) {
+    if(token.equals(
+      ""
+    )){
+      attributes.addFlashAttribute("error","Invalid token");
+      return "redirect:/forgot-password";
+    }
+    Optional<Account> optionalAccount = accountService.findByPasswordResetToken(token);
+    if(optionalAccount.isPresent()){
+      Account account = accountService.findById(optionalAccount.get().getId()).get();
+
+      LocalDateTime now = LocalDateTime.now();
+      if(now.isAfter(optionalAccount.get().getPassword_reset_token_expiry())){
+        attributes.addFlashAttribute("error","Token expired");
+        return "redirect:/forgot-password";
+      }
+      model.addAttribute("account",account);
+      return "account_views/change_password";
+    }
+    attributes.addFlashAttribute("error","Invalid token");
+    return "redirect:/forgot-password";
+  }
+  
+
+  @PostMapping("/change-password")
+  public String changePassword(@ModelAttribute Account account,RedirectAttributes attributes) {
+    Account account_by_id = accountService.findById(account.getId()).get();
+    account_by_id.setPassword(account.getPassword());
+    account_by_id.setPasswordResetToken("");
+    accountService.save(account_by_id);
+
+
+     
+    attributes.addFlashAttribute("message","password updated");
+      
+      return "redirect:/login";
+  }
+  
+  
 
 }

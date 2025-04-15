@@ -41,7 +41,7 @@ public class AccountService implements UserDetailsService{
     if(account.getPhoto() == null){
       String path =photo_prefix.replace("**","images/user-photo.png" ) ;
 
-      System.out.println("path =" + path);
+      
       account.setPhoto(path);
     }
     
@@ -78,5 +78,9 @@ public class AccountService implements UserDetailsService{
 
   public Optional<Account> findById(Long id){
     return accountRepository.findById(id);
+  }
+
+  public Optional<Account> findByPasswordResetToken(String token){
+    return accountRepository.findByPasswordResetToken(token);
   }
 }

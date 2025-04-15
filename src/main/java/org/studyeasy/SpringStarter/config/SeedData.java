@@ -53,7 +53,7 @@ public class SeedData implements CommandLineRunner {
     account01.setDate_of_birth(LocalDate.parse("2000-01-01"));
     account01.setGender("Male");
 
-    account02.setEmail("account02@studyeasy.org");
+    account02.setEmail("nyagar76@gmail.com");
     account02.setPassword("password");
     account02.setFirstname("admin");
     account02.setLastname("lastname");
@@ -97,11 +97,15 @@ public class SeedData implements CommandLineRunner {
     accountService.save(account03);
     accountService.save(account04);
 
-    List<Post> posts = postService.getAll();
+    List<Post> posts = postService.findAll();
 
     if (posts.size() == 0) {
       Post post01 = new Post();
       Post post02 = new Post();
+      Post post03 = new Post();
+      Post post04 = new Post();
+      Post post05 = new Post();
+      Post post06 = new Post();
 
       post01.setTitle("Post 01");
       post01.setBody("post 01 body.....");
@@ -110,6 +114,22 @@ public class SeedData implements CommandLineRunner {
       post02.setTitle("Post 02");
       post02.setBody("post 02 body.....");
       post02.setAccount(account02);
+
+      post03.setTitle("Post 03");
+      post03.setBody("post 03 body.....");
+      post03.setAccount(account03);
+
+      post04.setTitle("Post 04");
+      post04.setBody("post 04 body.....");
+      post04.setAccount(account04);
+
+      post05.setTitle("Post 05");
+      post05.setBody("post 05 body.....");
+      post05.setAccount(account02);
+
+      post06.setTitle("Post 06");
+      post06.setBody("post 06 body.....");
+      post06.setAccount(account04);
 
       postService.save(post01);
       postService.save(post02);

@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -13,11 +14,12 @@ import org.studyeasy.SpringStarter.utils.constants.Privilages;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity
 public class WebSecurityConfig {
 
     private static final String[] PUBLIC_ROUTES = {
-        "/", "/register", "/login", "/forgot-password","/reset-password","/db-console/**", 
-        "/css/**", "/fonts/**", "/images/**", "/js/**"
+        "/","/api/**", "/register", "/login", "/forgot-password","/reset-password","/change-password","/db-console/**", 
+       "/resources/**"
     };
 
     @Bean
